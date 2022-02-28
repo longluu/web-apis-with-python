@@ -8,12 +8,9 @@ app = Flask(__name__)
 @app.get("/")
 def index():
     """
-    DEFAULT ROUTE
-    This method will
-    1. Provide usage instructions formatted as JSON
+    Render the home page provided under templates/index.html in the repository
     """
-    response = {"usage": "/dict?=<word>"}
-    return jsonify(response)
+    return render_template("index.html")
 
 
 @app.get("/dict")
@@ -25,30 +22,30 @@ def dictionary():
     2. Try to find an exact match, and return it if found
     3. If not found, find all approximate matches and return
     """
-
-    # Get a word
     words = request.args.getlist("word")
 
-    # Error if no input
     if not words:
-        return jsonify({"status": "error", "word": words, "data": "No word provided."})
+        response = {"status": "error", "word": words, "data": "word not found"}
+        return jsonify(response)
 
-    # Iterate over all words
+    # Initialise the reponse
     response = {"words": []}
+
     for word in words:
-        # Check exact match in dictionary
+        # Try to find an exact match
         definitions = match_exact(word)
         if definitions:
             response["words"].append({"status": "success", "word": word, "data": definitions})
         else:
-            # Check approximate match
+            # Try to find an approximate match
             definitions = match_like(word)
             if definitions:
                 response["words"].append({"status": "partial", "word": word, "data": definitions})
             else:
-                return jsonify({"status": "error", "word": word, "data": "word not found"})
+                response[words].append({"status": "error", "word": word, "data": "word not found"})
 
-    return jsonify(response)
+    # Render the results.html template and return along with response after processing all words
+    return render_template("results.html", response=jsonify(response))
 
 
 if __name__ == "__main__":
